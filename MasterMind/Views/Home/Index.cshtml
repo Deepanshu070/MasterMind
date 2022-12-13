@@ -1,0 +1,204 @@
+﻿@{
+    ViewBag.Title = "Home Page";
+}
+
+
+
+<div class="container-fluid">
+    <div class="row">
+        <center>
+            <h1>Master Mind - A Game for Genius</h1>
+        </center>
+
+    </div>
+    <hr />
+    <div class="container">
+        <div class="row">
+            <center>
+                <input id="bt_Start_Game" type="button" value="Play Game" class="btn-lg btn btn-info" />
+            </center>
+            <center>
+                <input id="bt_ReStart_Game" type="button" value="Restart" class="btn-lg btn btn-info" style="display:none;"/>
+            </center>
+        </div>
+    </div>
+    <hr />
+    <center>
+        <label style="font-family:'Comic Sans MS'; font-weight:bold; font-size:larger;text-decoration:underline;display:none" id="que_Number_show">
+            1234
+        </label>
+        <label style="font-family:'Comic Sans MS'; font-weight:bold; font-size:larger;" id="que_Number_hidden">
+            ****
+        </label>
+    </center>
+</div>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col col-lg-6 col-md-6">
+            <section class="content">
+                <div class="card">
+                    <div class="card-header">
+                        <center>
+                            <h3 class="card-title" id="HeaderTitle">Game</h3>
+                            @*<a href="http://103.118.115.126:8080/eTmcsWeb/eChallanPDF/SPD20221209183221-229">content</a>*@
+                        </center>
+                    </div>
+                </div>
+                <hr />
+                <div class="card-body">
+                    <center>
+                        <label style="font-family:'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif; font-weight:bold">Guess the Number</label>
+                        <input id="txt_Attempt" type="text" value="" class="form-control" />
+                    </center>
+                    <br />
+                    <center>
+                        <input id="Check_Attempt" type="button" value="Check" class="btn-lg btn btn-warning" />
+                    </center>
+                </div>
+            </section>
+        </div>
+        <div class="col col-lg-6 col-md-6">
+            <section class="content">
+                <div class="card">
+                    <div class="card-header">
+                        <center>
+                            <h3 class="card-title" id="HeaderTitle">Hints</h3>
+                        </center>
+                    </div>
+                </div>
+                <hr />
+                <div class="card-body">
+                    <table id ="Hints_table" class="table table-bordered table-striped">
+                        <thead>
+                            <tr>
+                               <th>Attempt</th>
+                               <th>Present</th>
+                               <th>Correct Position</th>
+                               <th>Wrong Position</th>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
+
+
+            </section>
+        </div>
+    </div>
+</div>
+
+
+@Scripts.Render("~/bundles/jquery")
+@Scripts.Render("~/bundles/bootstrap")
+<script src="https://chatparts.azurewebsites.net/Assets/Theme/plugins/datatables/jquery.dataTables.min.js"></script>
+<script src="https://chatparts.azurewebsites.net/Assets/Theme/plugins/datatables-buttons/js/dataTables.buttons.min.js"></script>
+<script src="https://chatparts.azurewebsites.net/Assets/Theme/plugins/datatables-buttons/js/buttons.bootstrap4.min.js"></script>
+
+<script type="text/javascript">
+
+    var numberToGuess = "";
+    var attempts = [];
+    var count = 0;
+    $(document).ready(function () {
+        numberToGuess = "";
+    });
+
+    $("#bt_Start_Game").on("click", function () {
+        numberToGuess = "";
+        $.ajax({
+            url: '../api/Master/GetNumber',
+            type: 'GET',
+            data: '',
+            dataType: 'json',
+            error: function () {
+                //$('#info').html('<p>An error has occurred</p>');
+            },
+
+            success: function (data) {
+                numberToGuess = data;
+                console.log(data);
+                count = 0;
+                attempts = [];
+                $("#bt_ReStart_Game").show();
+                $("#bt_Start_Game").hide();
+            },
+
+        });
+    })
+
+    //Check_Attempt
+    $("#Check_Attempt").on("click", function () {
+        var attempt = $("#txt_Attempt").val();
+        console.log(numberToGuess);
+        console.log(attempt);
+        $.ajax({
+            url: '../api/Master/GetResults',
+            type: 'POST',
+            data: {
+                "Original": numberToGuess,
+                "Attempt": attempt
+            },
+            dataType: 'json',
+            error: function () {
+                //$('#info').html('<p>An error has occurred</p>');
+            },
+
+            success: function (data) {
+                console.log(data);
+                $("#txt_Attempt").val("");
+                var status = data["status"];
+                if (status == "false") {
+                    if (count < 9) {
+                        count += 1;
+                        console.log(count);
+                        attempts.push({
+                            Attempt: attempt,
+                            Present: data["Present"],
+                            CorrectPos: data["CorrectPos"],
+                            WrongPos: data["WrongPos"]
+                        });
+                        console.log(attempts);
+
+                        //var thead = "<thead><tr><th>Attempt</th><th>Present</th><th>Correct Position</th><th>Wrong Position</th></thead>";
+
+                        var tbody = "<tbody>";
+                        // var b = document.getElementById("RequestBody");
+                        for (var i = 0; i < attempts.length; i++) {
+
+                            tbody = "<tr> <td class='td col1'>" + attempts[i].Attempt + " </td> \
+                                    <td class='td col2'>" + attempts[i].Present + "</td> \
+                                    <td class='td col3'>" + attempts[i].CorrectPos + "</td> \
+                                    <td class='td col3'>" + attempts[i].WrongPos + "</td> \
+                              </tr>";
+                            //$(tbody).appendTo($("#RequestTable  tbody"));
+                            //$("#RequestBody").insertRow(tbody);
+                            //tbody = "";
+
+                        }
+                        tbody += "</tbody>"
+                        //var tfoot = "<tfoot><tr><th>ID</th><th>Request Date</th><th>Request Title</th><th>Details</th></tfoot>";
+                        //console.log(tbody);
+                        var table_element = tbody;
+                        //var table_element = tbody ;
+
+
+                        $("#Hints_table").append(table_element);
+                    }
+                } else {
+                    alert("you Won");
+                    
+                }
+                
+                
+
+
+
+
+            },
+
+        });
+    })
+
+
+</script>
+
